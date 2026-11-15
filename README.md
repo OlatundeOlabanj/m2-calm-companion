@@ -2,6 +2,18 @@
 
 A calm voice beside you when a message has shaken you. You talk to M² out loud (no typing needed) and it talks back in a female voice. With consent, a camera reads your breathing, pulse, HRV and face (Presage SmartSpectra SDK), so M² can tell when you are tense and help you slow down. M² learns YOUR calm as you go, with no waiting screen. It only advises. Sending any message is always your choice, and M² never touches your messages.
 
+**Quick start** (Linux, Node 22.12+, a free Presage key and optionally a Groq key):
+1. `git clone https://github.com/OlatundeOlabanj/m2-calm-companion.git && cd m2-calm-companion`
+2. `cp .env.example .env`, then type your keys into `.env` yourself.
+3. `npm install && npm test` (90 tests).
+4. `npm start`, tick the consent box, choose **Use a clip**, pick a short mp4 of your face (80 to 90 seconds, still, well lit, one person), and wait for M² to read it and talk back.
+
+**Where Presage is used in the code**
+- `reader.cjs`: creates the SmartSpectra Node SDK, feeds it a clip with `useFile()`, collects breathing, pulse, HRV and expression messages, and summarises them. Telemetry is off.
+- `scripts/read-clip.cjs` and `clip-runner.cjs`: run that reader in a separate process (system Node, or Electron's) so a slow computer stays responsive, and retry when Presage's servers drop the connection.
+- `renderer/live.js`: Live mode, using `useMediaStream()` from the bundled renderer SDK. Not usable on the 2-core laptop it was built on.
+- `renderer/baseline.js` and `renderer/gate.js`: learn your calm from the first reading and turn later readings into a tension number and a send gate.
+
 How to use it: tap **Talk with me** (or press Space). M² listens, notices when you stop speaking, answers, and listens again, until you say "stop listening", tap the button, or stay quiet for three turns. If you received a message that upset you, tap **Paste a message**, paste it, and just talk about it. Say "help me reply" and M² offers a short calm reply you can copy or ignore. Press **Light** in a dark room to turn your screen into a lamp. **Details** shows every signal M² sees and everything that leaves the computer.
 
 ## What it is for
