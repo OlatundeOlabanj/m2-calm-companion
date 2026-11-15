@@ -1,0 +1,29 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+%% M² use cases (Mermaid has no UML use-case type, so this is drawn as a flowchart)
+flowchart LR
+  user([User])
+  presage([Presage])
+  groq([Groq])
+  subgraph M2 [M² system boundary]
+    UC1(Talk with M² by voice)
+    UC2(Give camera consent and choose Live or Clip)
+    UC3(Read breathing and pulse)
+    UC4(Set a calm baseline)
+    UC5(Hear tension compared with own calm)
+    UC6(Do guided slow breathing)
+    UC7(Check a message before sending)
+    UC8(Recalibrate)
+    UC9(Stop listening)
+  end
+  user --- UC1
+  user --- UC2
+  user --- UC3
+  user --- UC6
+  user --- UC7
+  user --- UC8
+  user --- UC9
+  UC3 -.includes.-> UC4
+  UC3 -.includes.-> UC5
+  UC7 -.uses.-> UC5
+  UC3 --- presage
+  UC1 --- groq

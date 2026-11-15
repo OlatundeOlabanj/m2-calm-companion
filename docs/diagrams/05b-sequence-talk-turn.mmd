@@ -1,0 +1,22 @@
+%% M² sequence: one spoken turn
+sequenceDiagram
+  actor U as User
+  participant R as Renderer
+  participant M as Main process
+  participant G as Groq API
+  U->>R: Speak (mic open while Talk is on)
+  R->>R: Voice activity detects end of speech
+  R->>M: m2:transcribe (audio)
+  M->>G: Speech to text
+  G-->>M: Transcript
+  M-->>R: Transcript
+  R->>R: Match command, else build prompt (few numbers, label, recent turns)
+  R->>M: m2:chat (messages)
+  M->>G: Chat completion
+  G-->>M: Reply text
+  M-->>R: Reply
+  R->>M: m2:tts (text)
+  M->>G: Text to speech
+  G-->>M: Voice audio
+  M-->>R: Audio
+  R-->>U: Plays voice, shows words and orb

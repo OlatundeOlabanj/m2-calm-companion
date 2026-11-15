@@ -1,0 +1,26 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+%% M² deployment
+flowchart LR
+  subgraph PC [User computer, desktop]
+    subgraph E [Electron app M²]
+      win[Renderer window]
+      mainp[Main process]
+      child[Reader child process, only in clip mode]
+    end
+    cam[Webcam or phone camera clip]
+    mic[Microphone]
+    tmp[(Temp folder, clip deleted after read)]
+  end
+  net((Internet))
+  presage[Presage cloud]
+  groq[Groq API]
+  cam --> win
+  mic --> win
+  win <--> mainp
+  mainp --> child
+  mainp --> tmp
+  child --> tmp
+  mainp --> net
+  child --> net
+  net --> presage
+  net --> groq

@@ -1,0 +1,15 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+%% M² Data Flow Diagram, level 0 (context diagram)
+flowchart LR
+  user([User])
+  cam([Camera or recorded clip])
+  presage([Presage cloud])
+  groq([Groq API])
+  m2((0<br/>M² calm companion))
+  user -- "voice, taps, consent choice, message to check" --> m2
+  m2 -- "spoken and written replies, orb, breathing guide, send-gate advice" --> user
+  cam -- "video frames (live) or clip file" --> m2
+  m2 -- "API key check, model download requests" --> presage
+  presage -- "access and model data" --> m2
+  m2 -- "speech audio, conversation text, a few numbers, expression label" --> groq
+  groq -- "transcript, reply text, voice audio" --> m2

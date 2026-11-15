@@ -1,0 +1,8 @@
+%% M² send gate states (it only advises, never blocks sending for real)
+stateDiagram-v2
+  [*] --> open
+  open --> locked : tension stays high
+  locked --> review : body has settled
+  review --> open : confirmReview
+  locked --> open : override
+  open --> open : poor signal (pauses, never locks)

@@ -1,0 +1,19 @@
+%% M² sequence: reading a recorded clip (clip mode)
+sequenceDiagram
+  actor U as User
+  participant R as Renderer (app.js, clip.js)
+  participant M as Main process (main.cjs)
+  participant C as Reader child process
+  participant P as Presage SDK and cloud
+  U->>R: Tap Read me
+  R->>R: Record about 60 s with MediaRecorder
+  R->>M: clip:read (clip data, extension)
+  M->>M: Write temp file m2-clip-* (mode 0600)
+  M->>C: Start reader (key by environment)
+  C->>P: useFile, start (key check, model download)
+  P-->>C: metrics (breathing, pulse, HRV, expression)
+  C-->>M: progress lines, then done summary
+  M->>M: Delete temp file
+  M-->>R: Summary and picture checks
+  R->>R: ClipSource.setReading, score tension
+  R-->>U: Plain-words result and next step

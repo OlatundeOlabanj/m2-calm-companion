@@ -1,0 +1,42 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+%% M² Data Flow Diagram, level 1
+flowchart TB
+  user([User])
+  cam([Camera or clip file])
+  presage([Presage cloud])
+  groq([Groq API])
+  P1("1.0 Listen<br/>microphone, voice activity, transcript")
+  P2("2.0 Read body<br/>live mode or clip mode")
+  P3("3.0 Score tension<br/>against own calm baseline")
+  P4("4.0 Compose reply<br/>prompt builder and chat")
+  P5("5.0 Speak and show<br/>voice, orb, breathing guide")
+  P6("6.0 Send gate<br/>advice only")
+  D1[("D1 Calm baseline<br/>in memory")]
+  D2[("D2 Latest clip reading<br/>held 15 minutes")]
+  D3[("D3 Temporary clip file<br/>deleted after reading")]
+  D4[("D4 Local settings<br/>browser storage")]
+  user -- "speech" --> P1
+  P1 -- "audio" --> groq
+  groq -- "transcript" --> P1
+  P1 -- "command or message" --> P4
+  cam -- "frames or file" --> P2
+  P2 -- "clip recording" --> D3
+  D3 -- "clip file" --> P2
+  P2 -- "key check, models" --> presage
+  presage -- "access, models" --> P2
+  P2 -- "breathing, pulse, expression" --> D2
+  D2 -- "reading" --> P3
+  P2 -- "live readings" --> P3
+  D1 -- "calm baseline" --> P3
+  P3 -- "first clip or calm reading" --> D1
+  P3 -- "tension score" --> P4
+  P3 -- "tension score" --> P6
+  P4 -- "numbers, label, conversation" --> groq
+  groq -- "reply text" --> P4
+  P4 -- "reply" --> P5
+  P5 -- "text to speak" --> groq
+  groq -- "voice audio" --> P5
+  P5 -- "voice, orb, guide" --> user
+  P6 -- "Send held or open" --> user
+  user -- "consent, mode, settings" --> D4
+  D4 -- "stored choices" --> P2

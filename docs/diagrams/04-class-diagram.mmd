@@ -1,0 +1,59 @@
+%% M² main classes and modules (names taken from the code)
+classDiagram
+  direction LR
+  class Gate {
+    +update(tension, dt, quality)
+    +confirmReview()
+    +override()
+  }
+  class Smoother {
+    +push(x)
+    +reset()
+  }
+  class ClipSource {
+    +label
+    +setReading(sm)
+    +tick()
+    +reset()
+    +has
+    +stale
+  }
+  class Orb {
+    +set(patch)
+    +setFrameMs(ms)
+    +ripple(strength)
+    +start()
+    +resize()
+  }
+  class ClipRunner {
+    <<module clip-runner.cjs>>
+    +run(file, key, runtime, onEvent)
+    +kill()
+    +busy()
+  }
+  class Reader {
+    <<module reader.cjs>>
+    +readClip(lib, options)
+    +summarize(samples)
+    +extract(message)
+  }
+  class BaselineMath {
+    <<module baseline.js>>
+    +makeBaseline()
+    +rawTension()
+  }
+  class Live {
+    <<module live.js>>
+    +createLive(options)
+  }
+  class MainProcess {
+    <<main.cjs>>
+    IPC m2 and clip channels
+  }
+  Gate ..> BaselineMath : tension input
+  ClipSource ..> BaselineMath : reading to tension
+  MainProcess --> ClipRunner : owns
+  ClipRunner --> Reader : starts as child process
+  Live ..> Gate : live readings
+  ClipSource ..> Gate : clip readings
+  Orb ..> Gate : shows state

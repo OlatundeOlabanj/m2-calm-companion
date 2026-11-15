@@ -1,0 +1,4 @@
+node_modules
+shots
+.env
+renderer/presage.bundle.js

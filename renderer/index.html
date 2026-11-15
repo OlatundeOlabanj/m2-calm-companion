@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M²</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-gate="open">
+<canvas id="orb" aria-hidden="true"></canvas>
+
+<header id="hud" hidden>
+  <div class="brand">M²<span id="srcChip" class="chip"></span><span id="learnChip" class="chip" hidden></span></div>
+  <div class="hudRight">
+    <button id="lightBtn" class="icon" title="Make the screen bright so it lights your face in a dark room">Light</button>
+    <button id="voiceBtn" class="icon" title="Voice on or off">Voice</button>
+    <button id="detailsBtn" class="icon" title="Show every signal and everything that is sent">Details</button>
+  </div>
+</header>
+
+<section id="consent" class="overlay">
+  <div class="card">
+    <h1>M²</h1>
+    <p class="lead">A calm voice beside you when a message has shaken you.</p>
+    <p>Talk to M² out loud. With your permission, a camera reads your breathing, pulse and face, so M² can tell when you are tense and help you slow down. M² is a wellness companion. It is not therapy and it never diagnoses.</p>
+    <ul class="plain">
+      <li>Live mode never records or saves video, audio or your messages. Nothing is stored on disk.</li>
+      <li id="clipPrivacy" hidden>Clip mode records about a minute of video into a temporary file, only so Presage can read it, and deletes it as soon as the reading ends. A clip you choose yourself is read where it is and is never copied or deleted. Audio and messages are never saved.</li>
+      <li>The camera is processed by the Presage SmartSpectra SDK, which keeps a session with Presage's servers while it runs. Its aggregate telemetry is switched off. See "Consent and data handling" in the README.</li>
+      <li>Anything M² says about your face or body is a gentle guess for you to correct.</li>
+    </ul>
+    <label class="check"><input type="checkbox" id="consentBox"> I agree to use my camera for this.</label>
+    <div id="modeRow" class="modeRow" hidden>
+      <label class="check"><input type="radio" name="mode" id="modeLive" value="live"> <span><b>Live</b> reads you continuously through the camera. It needs a fast computer. If M² freezes or says the camera picture is too slow, use Clip.</span></label>
+      <label class="check"><input type="radio" name="mode" id="modeClip" value="clip"> <span><b>Clip</b> is for slower computers. M² records about a minute, then reads it with nothing else running, then talks with you using that reading.</span></label>
+    </div>
+    <div id="camRow" class="camRow" hidden>
+      <label for="camSel" class="fine">Camera</label>
+      <select id="camSel"></select>
+      <p class="fine" id="camNote"></p>
+      <div class="row"><button id="camRefresh">Look again</button><button id="camAny" class="ghost">Use another camera anyway</button></div>
+    </div>
+    <label class="check" id="aiRow"><input type="checkbox" id="aiBox"> <span>Let M² talk with me using Groq's cloud AI <em>(needed for talking)</em>. While Talk with me is on, the microphone is open and each thing you say is sent to Groq as a short voice clip, then as text, together with a few body numbers and the message you pasted (if any). M²'s replies are also sent to Groq as text so a natural voice can speak them. Nothing is saved.</span></label>
+    <div class="row"><button id="startBtn" class="primary" disabled>Meet M²</button></div>
+    <p class="fine" id="srcNote"></p>
+  </div>
+</section>
+
+<video id="preview" class="preview" autoplay muted playsinline hidden></video>
+
+<section id="clipPanel" class="overlay" hidden>
+  <div class="card">
+    <h2 id="clipTitle">Read me</h2>
+    <p id="clipText" class="lead"></p>
+    <video id="clipPreview" class="clipPreview" autoplay muted playsinline hidden></video>
+    <div id="clipBreath" class="clipBreath" hidden></div>
+    <div class="bar" id="clipBarWrap" hidden><div id="clipBar"></div></div>
+    <p id="clipHint" class="fine"></p>
+    <div class="row"><button id="clipGo" class="primary">Start recording</button><button id="clipCancel">Cancel</button></div>
+  </div>
+</section>
+<div id="pace" class="pace"></div>
+
+<main id="stage" hidden>
+  <div id="help" class="help" hidden>
+    <span id="helpText"></span>
+    <button id="helpBtn">Camera help</button>
+  </div>
+
+  <div id="caption" class="caption" aria-live="polite"></div>
+  <div id="capsub" class="capsub"></div>
+
+  <div id="suggest" class="suggest" hidden>
+    <div class="fine">A reply you could send</div>
+    <div id="suggestText"></div>
+    <div class="row"><button id="copySuggest" class="primary">Copy</button><button id="closeSuggest">Close</button></div>
+  </div>
+
+  <div id="incomingBox" class="incomingBox" hidden>
+    <label for="incoming" class="fine">The message you received</label>
+    <textarea id="incoming" placeholder="Paste the message you got, then tell M² about it" rows="3"></textarea>
+  </div>
+
+  <div class="dock">
+    <button id="micBtn" class="mic primary big" title="Talk with M² out loud (or press Space)"><span class="dot"></span>Talk with me</button>
+    <div class="small">
+      <button id="readBtn" class="ghost" hidden>Read me</button>
+      <button id="importBtn" class="ghost" hidden>Use a clip</button>
+      <button id="calmBtn" class="ghost">Breathe with me</button>
+      <button id="msgBtn" class="ghost">Paste a message</button>
+    </div>
+    <div class="cmd">
+      <input id="cmdInput" placeholder="or type to M² here" autocomplete="off">
+      <button id="cmdGo">Ask</button>
+    </div>
+  </div>
+</main>
+
+<aside id="details" class="details" hidden>
+  <div class="dHead">What M² sees right now</div>
+  <div class="dRow"><span>Tension</span><b id="tensionNum">0</b></div>
+  <div class="bar"><div id="tensionBar"></div><i class="mark" style="left:55%"></i></div>
+  <div class="dRow"><span>Signal quality</span><b id="vQ">-</b></div>
+  <hr>
+  <div class="dHead">Body</div>
+  <div class="dRow"><span>Breathing</span><b><span id="vB">-</span> /min</b></div>
+  <div class="dRow"><span>Your calm</span><b><span id="vBase">-</span> /min</b></div>
+  <div class="dRow"><span>Pulse</span><b><span id="vP">-</span> bpm</b></div>
+  <div class="dRow"><span>Your calm</span><b><span id="vPBase">-</span> bpm</b></div>
+  <div class="dRow"><span>HRV (RMSSD)</span><b id="vHrv">-</b></div>
+  <hr>
+  <div class="dHead">Face</div>
+  <div class="dRow"><span>Expression</span><b id="vExpr">-</b></div>
+  <div class="dRow"><span>Blinking</span><b id="vBlink">-</b></div>
+  <div class="dRow"><span>Talking</span><b id="vTalk">-</b></div>
+  <div class="dRow"><span>Added to tension by face</span><b id="vNudge">+0</b></div>
+  <hr>
+  <div class="dHead">Where your data goes</div>
+  <div class="dRow"><span>Video saved</span><b id="vVideoSaved">never</b></div>
+  <div class="dRow"><span>Messages saved</span><b>never</b></div>
+  <div class="dRow"><span>Presage telemetry</span><b>off</b></div>
+  <div class="dRow"><span>Groq AI</span><b id="vAI">off</b></div>
+  <div class="fine">Sent to Groq this session</div>
+  <div class="dRow"><span>Voice clips</span><b id="cVoice">0</b></div>
+  <div class="dRow"><span>Spoken replies (text for voice)</span><b id="cTTS">0</b></div>
+  <div class="dRow"><span>Chat replies</span><b id="cChat">0</b></div>
+  <hr>
+  <div class="dHead">Camera</div>
+  <select id="camSel2" title="Switch camera"></select>
+  <div class="row"><button id="camRetry">Use this camera</button></div>
+  <pre id="camInfoD" class="camInfo"></pre>
+  <hr>
+  <div class="dHead">Voice and network</div>
+  <pre id="voiceInfo" class="camInfo"></pre>
+  <div class="row"><button id="voiceTest">Test natural voice</button><button id="netBtn">Check network</button></div>
+  <pre id="netInfo" class="camInfo"></pre>
+</aside>
+
+<script src="baseline.js"></script>
+<script src="gate.js"></script>
+<script src="commands.js"></script>
+<script src="signal.js"></script>
+<script src="live.js"></script>
+<script src="clip.js"></script>
+<script src="presage.bundle.js"></script>
+<script src="phrases.js"></script>
+<script src="prompt.js"></script>
+<script src="read.js"></script>
+<script src="orb.js"></script>
+<script src="vad.js"></script>
+<script src="voice.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

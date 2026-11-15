@@ -1,0 +1,43 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+%% M² components
+flowchart TB
+  subgraph Renderer [Renderer window]
+    app[app.js]
+    live[live.js live reader]
+    clip[clip.js clip helpers]
+    gate[gate.js send gate]
+    base[baseline.js tension maths]
+    voice[voice.js and vad.js]
+    orb[orb.js animation]
+    prompt[prompt.js and phrases.js]
+  end
+  pre[preload.cjs bridge]
+  subgraph Main [Main process]
+    main[main.cjs IPC]
+    groqc[groq.cjs client]
+    speak[speak.cjs fallback voice]
+    runner[clip-runner.cjs]
+    envc[env.cjs keys]
+  end
+  subgraph Child [Reader child process]
+    reader[reader.cjs and read-clip.cjs]
+  end
+  ext1[(Presage cloud)]
+  ext2[(Groq API)]
+  app --> live
+  app --> clip
+  app --> gate
+  app --> base
+  app --> voice
+  app --> orb
+  app --> prompt
+  app --> pre
+  pre --> main
+  main --> groqc
+  main --> speak
+  main --> runner
+  main --> envc
+  runner --> reader
+  groqc --> ext2
+  live --> ext1
+  reader --> ext1

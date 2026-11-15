@@ -1,0 +1,46 @@
+%% M² logical data model. M² has NO database: these entities live in memory during a session
+%% (and a few settings in browser storage). Video is never stored beyond a temporary clip file.
+erDiagram
+  SESSION ||--o| CONSENT : "starts with"
+  SESSION ||--o| BASELINE : "builds"
+  SESSION ||--o{ READING : "collects"
+  SESSION ||--o{ TURN : "has"
+  SESSION ||--o| GATE_STATE : "tracks"
+  CLIP_FILE ||--o| READING : "is read into"
+  READING ||--o| TENSION : "scored as"
+  BASELINE ||--o{ TENSION : "compared with"
+  CONSENT {
+    string mode "live or clip"
+    bool camera_allowed
+    bool ai_allowed
+  }
+  BASELINE {
+    float breathing_median
+    float pulse_median
+    float spread
+  }
+  READING {
+    float breathing_per_min
+    float pulse_bpm
+    float hrv_rmssd
+    string expression_label
+    float quality
+    string source "live or clip"
+    datetime taken_at
+  }
+  CLIP_FILE {
+    string temp_path "m2-clip-*"
+    int seconds "about 60"
+    string format "mp4 or webm"
+    bool deleted_after_read
+  }
+  TENSION {
+    float score "0 to 100"
+  }
+  TURN {
+    string role "user or assistant"
+    string text
+  }
+  GATE_STATE {
+    string state "open, locked, review"
+  }
