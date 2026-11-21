@@ -88,3 +88,5 @@ button.big{font-size:18px;padding:15px 38px;min-width:240px;justify-content:cent
 #clipBar{height:100%;width:0;background:var(--accent);transition:width .3s}
 #clipBar.indeterminate{width:35%;animation:clipSlide 1.8s ease-in-out infinite}
 @keyframes clipSlide{0%{margin-left:-35%}100%{margin-left:100%}}
+
+.noteBar{text-align:center;max-width:560px;margin:0 auto 8px;opacity:.85}

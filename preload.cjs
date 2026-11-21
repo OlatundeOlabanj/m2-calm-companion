@@ -16,6 +16,13 @@ contextBridge.exposeInMainWorld('m2', {
   stopSpeak: () => ipcRenderer.send('m2:stopspeak'),
 });
 
+// Memory help: what to close, and a watchdog that stops live reading before the computer freezes.
+contextBridge.exposeInMainWorld('m2sys', {
+  heavy: () => ipcRenderer.invoke('sys:heavy'),
+  liveState: (on) => ipcRenderer.send('live:state', !!on),
+  onLowMem: (cb) => { ipcRenderer.on('live:lowmem', (_e, mb) => cb(mb)); },
+});
+
 // Clip mode bridge. Video goes to the main process only to be read by Presage; the Presage key never reaches the window through here.
 const clipStatus = ipcRenderer.sendSync('clip:status') || { available: false, suggest: false };
 contextBridge.exposeInMainWorld('m2clip', {

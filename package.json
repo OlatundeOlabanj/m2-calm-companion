@@ -1,6 +1,6 @@
 {
   "name": "m2",
-  "version": "0.9.5",
+  "version": "0.11.0",
   "description": "A calm voice companion. Reads breathing and pulse (with consent) and helps you settle before you reply to a message that shook you.",
   "main": "main.cjs",
   "scripts": {

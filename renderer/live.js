@@ -12,7 +12,7 @@
   const EXPR = { 1: 'angry', 2: 'contempt', 3: 'disgust', 4: 'fear', 5: 'happy', 6: 'neutral', 7: 'sad', 8: 'surprise' };
   const exprName = (t) => (typeof t === 'number' ? EXPR[t] : String(t || '').toLowerCase()) || '';
 
-  function createLive({ PR, apiKey, now, getStream, recoverDelayMs, patientMs }) {
+  function createLive({ PR, apiKey, now, getStream, recoverDelayMs, patientMs, lite }) {
     const clock = now || (() => Date.now());
     const sampleL = [], statusL = [], streamL = [];
     let sdk = null;
@@ -117,7 +117,7 @@
         if (!sdk) build();
         last = { breathing: NaN, pulse: NaN, validation: null, metricsAt: 0, expression: null, blinking: false, talking: false, hrv: null };
         if (deviceId) {
-          const open = getStream || ((id) => navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: id }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } }));
+          const open = getStream || ((id) => navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: id }, width: { ideal: lite ? 640 : 1280 }, height: { ideal: lite ? 480 : 720 }, frameRate: { ideal: 30 } } }));
           ownStream = await open(deviceId);
           sdk.useMediaStream(ownStream);
           streamL.forEach((f) => f(ownStream));

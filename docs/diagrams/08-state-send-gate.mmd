@@ -1,8 +1,14 @@
 %% M² send gate states (it only advises, never blocks sending for real)
 stateDiagram-v2
+  direction LR
   [*] --> open
-  open --> locked : tension stays high
-  locked --> review : body has settled
-  review --> open : confirmReview
+  open --> locked : tension 55 or more, held 3 s
+  locked --> review : tension under 30, held 8 s
+  review --> open : person confirms re-read
+  review --> locked : tense again
   locked --> open : override
-  open --> open : poor signal (pauses, never locks)
+  review --> open : override
+  note right of open
+    Poor signal (quality under 0.4):
+    timers cleared, never locks
+  end note

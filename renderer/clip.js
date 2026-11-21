@@ -35,9 +35,9 @@
   // Plain words for a finished reading. States measurements and never names an emotion or diagnoses.
   function describe({ sm, base, firstTime, tension }) {
     const b = r(sm.breathing), p = r(sm.pulse);
-    if (firstTime) return { text: 'I have your calm: about ' + b + ' breaths a minute and a pulse near ' + p + '.', sub: 'When you feel tense, tap Read me again and I will compare.' };
+    if (firstTime) return { text: 'I have your calm: about ' + b + ' breaths a minute and a pulse near ' + p + ' beats a minute.', sub: 'When you feel tense, tap Read me again and I will compare.' };
     const bb = base ? r(base.breathing) : null, pp = base ? r(base.pulse) : null;
-    const cmp = bb != null ? 'Breathing ' + b + ' (your calm ' + bb + '), pulse ' + p + ' (your calm ' + pp + ').' : 'Breathing ' + b + ', pulse ' + p + '.';
+    const cmp = bb != null ? 'Breathing ' + b + ' per minute (your calm ' + bb + '), pulse ' + p + ' bpm (your calm ' + pp + ' bpm).' : 'Breathing ' + b + ' per minute, pulse ' + p + ' bpm.';
     if (tension < 30) return { text: 'You look settled.', sub: cmp };
     if (tension < 55) return { text: 'A little above your calm.', sub: cmp + ' Want to breathe together?' };
     return { text: 'Your body looks tense.', sub: cmp + ' Let us slow down before you send anything.' };

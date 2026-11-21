@@ -148,6 +148,37 @@ ipcMain.handle('clip:read', async (e, req) => {
   }
 });
 ipcMain.on('clip:cancel', () => runner.kill());
+
+// Memory help for slow computers. The list tells the person what to close before a live reading. The watchdog stops the live reading before the computer freezes.
+ipcMain.handle('sys:heavy', () => new Promise((resolve) => {
+  const freeMB = Math.round(os.freemem() / 1048576);
+  if (process.platform !== 'linux') { resolve({ freeMB, procs: [] }); return; }
+  require('child_process').execFile('ps', ['-eo', 'rss=,comm=', '--sort=-rss'], { timeout: 4000 }, (err, out) => {
+    if (err) { resolve({ freeMB, procs: [] }); return; }
+    const sums = {};
+    for (const line of String(out).split('\n')) {
+      const m = line.trim().match(/^(\d+)\s+(.+)$/);
+      if (!m) continue;
+      const name = m[2].trim();
+      if (/^(electron|node|npm|ps|bash|sh)$/i.test(name)) continue;
+      sums[name] = (sums[name] || 0) + Number(m[1]) / 1024;
+    }
+    const procs = Object.keys(sums).map((n) => ({ name: n, mb: Math.round(sums[n]) })).filter((x) => x.mb >= 80).sort((a, b) => b.mb - a.mb).slice(0, 6);
+    resolve({ freeMB, procs });
+  });
+}));
+const LOW_MEM_MB = Number(readEnvKey(__dirname, 'M2_LOW_MEM_MB')) || 200;
+let memTimer = null, memLow = 0;
+ipcMain.on('live:state', (_e, on) => {
+  clearInterval(memTimer); memLow = 0;
+  if (!on) return;
+  memTimer = setInterval(() => {
+    const free = os.freemem() / 1048576;
+    memLow = free < LOW_MEM_MB ? memLow + 1 : 0;
+    if (memLow >= 2 && win && !win.isDestroyed()) { win.webContents.send('live:lowmem', Math.round(free)); memLow = -10; }
+  }, 2000);
+  if (memTimer.unref) memTimer.unref();
+});
 app.on('before-quit', () => { runner.kill(); cleanOldClips(); });
 
 ipcMain.handle('m2:speak', (_e, text) => speaker.speak(typeof text === 'string' ? text : ''));

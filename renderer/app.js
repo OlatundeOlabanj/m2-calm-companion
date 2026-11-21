@@ -9,7 +9,7 @@
 
   const env = window.presageEnv || { available: false, reason: '' };
   const hasSdk = !!(env.available && window.PresageRenderer);
-  const presage = hasSdk ? CH.createLive({ PR: window.PresageRenderer, apiKey: env.apiKey }) : null;
+  const presage = hasSdk ? CH.createLive({ PR: window.PresageRenderer, apiKey: env.apiKey, lite: !!(window.m2clip && window.m2clip.suggest) }) : null;
   const live = !!presage;
   // There is no demo or simulated mode in the app. Only the automated tests set this flag, to run without a camera.
   const testRun = window.__M2_TEST_SOURCE__ === true;
@@ -47,7 +47,7 @@
     allCams = cams;
     const pinned = store.get('m2.camPin');
     const phone = cams.find((c) => isPhoneCam(c.label));
-    const chosen = cams.find((c) => c.deviceId === pinned) || phone || (S.useAny ? (cams.find((c) => !isPhoneCam(c.label)) || cams[0]) : null);
+    const chosen = cams.find((c) => c.deviceId === pinned) || phone || cams.find((c) => !isPhoneCam(c.label)) || cams[0] || null;
     [$('camSel'), $('camSel2')].forEach((sel) => {
       sel.textContent = '';
       cams.forEach((c, n) => { const o = document.createElement('option'); o.value = c.deviceId; o.textContent = (c.label || 'Camera ' + (n + 1)) + (isPhoneCam(c.label) ? ' (phone)' : ''); sel.appendChild(o); });
@@ -55,7 +55,7 @@
     });
     camId = chosen ? chosen.deviceId : '';
     if (chosen && isPhoneCam(chosen.label)) $('camNote').textContent = 'Phone camera found: ' + chosen.label + '. M² will use it.';
-    else if (chosen) $('camNote').textContent = 'Using ' + (chosen.label || 'this camera') + '. A phone camera usually reads breathing better.';
+    else if (chosen) $('camNote').textContent = 'Using ' + (chosen.label || 'this camera') + '. M² checks that it shows a picture before it starts.';
     else $('camNote').textContent = 'The DroidCam phone camera was not found. Open DroidCam on your phone, connect it to this computer, then press Look again.';
     $('camAny').hidden = !!chosen || !cams.length;
     $('startBtn').disabled = !canStart();
@@ -219,10 +219,37 @@
     });
   }
 
+  // Before the live reading starts: does the chosen camera really show a picture? A phone camera app that is not connected shows black. If so, try the other cameras.
+  async function firstCameraWithPicture() {
+    const order = [camId].concat(allCams.map((c) => c.deviceId).filter((id) => id && id !== camId));
+    for (const id of order) {
+      if (!id) continue;
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: id }, width: { ideal: 320 }, height: { ideal: 240 } } });
+        const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = stream;
+        try { await v.play(); } catch (e) { /* the check below decides */ }
+        const r = await CH.clip.pictureCheck(v, 3000);
+        if (r.ok) return id;
+      } catch (e) { /* this camera cannot open: try the next */ }
+      finally { if (stream) stream.getTracks().forEach((t) => t.stop()); }
+    }
+    return '';
+  }
   async function openCamera() {
     camStream = null; camBright = null; camBlackFor = 0; camDarkFor = 0; S.boostTried = false; S.badFor = 0;
     await presage.stop();
+    if (!S.camChecked) {
+      S.camChecked = true;
+      const ok = await firstCameraWithPicture();
+      if (ok && ok !== camId) {
+        camId = ok; [$('camSel'), $('camSel2')].forEach((sel) => { sel.value = ok; });
+        const lbl = (allCams.find((c) => c.deviceId === ok) || {}).label || 'another camera';
+        $('srcNote').textContent = 'The first camera showed no picture, so M² is using ' + lbl + '.';
+      }
+    }
     await presage.start(camId || undefined);
+    if (window.m2sys) window.m2sys.liveState(true);
   }
   $('startBtn').addEventListener('click', async () => {
     S.aiOn = aiPossible && $('aiBox').checked;
@@ -263,7 +290,7 @@
     $('stage').hidden = false;
     $('learnChip').hidden = false;
     orb.ripple(1.2);
-    if (S.mode === 'clip') say('Hello. I am M squared.', 'First I need to read your calm. Tap Read me, and sit still for a minute.');
+    if (S.mode === 'clip') say('Hello. I am M squared.', 'Before we start, can I take a reading? Tap Read me and sit still for a minute.');
     else say(CH.phrases.welcome(), '');
   }
   function recalibrate() {
@@ -433,6 +460,23 @@
         + (r.some((x) => !x.ok) ? '\n\nIf it says NOT reachable, this network is blocking it. Try a phone hotspot.' : '');
     } catch (e) { out.textContent = 'Network check failed: ' + e.message; }
   });
+  $('memBtn').addEventListener('click', async () => {
+    const out = $('memInfo');
+    if (!(window.m2sys && window.m2sys.heavy)) { out.textContent = 'This is only available in the desktop app.'; return; }
+    out.textContent = 'Checking...';
+    try {
+      const r = await window.m2sys.heavy();
+      out.textContent = 'Free memory now: about ' + r.freeMB + ' MB.' + (r.procs.length ? '\nBiggest programs (close these before a live reading):\n' + r.procs.map((p) => '  ' + p.name + '  ' + p.mb + ' MB').join('\n') : '\nNo other big programs found.')
+        + '\n\nA live reading needs the most memory. If free memory is under about 1000 MB, close the programs above first, or use Clip mode.';
+    } catch (e) { out.textContent = 'Could not check: ' + e.message; }
+  });
+  if (window.m2sys && window.m2sys.onLowMem) window.m2sys.onLowMem(async (mb) => {
+    if (S.mode !== 'live') return;
+    try { await presage.stop(); } catch (e) { /* already stopped */ }
+    window.m2sys.liveState(false);
+    S.lastClipError = 'Live reading stopped: memory was almost full (about ' + mb + ' MB free).';
+    say('I stopped the live camera before your computer froze.', 'Memory was almost full. Close other programs (Details, Memory, What should I close?), then restart M², or use Clip mode.', { speak: false });
+  });
   $('voiceTest').addEventListener('click', async () => {
     if (!(S.aiOn && window.m2 && window.m2.tts)) { $('voiceInfo').textContent = 'Natural voice needs the Groq AI option ticked when you press Meet M².'; return; }
     S.voiceNote = ''; S.voiceWhy = ''; voice.cloud = true; voice.muted = false; setMuted(false);
@@ -538,6 +582,7 @@
     const sm = (res && res.summary) || {};
     const ok = sm.good >= 5 && Number.isFinite(sm.breathing) && Number.isFinite(sm.pulse);
     if (!ok) { say('I could not read breathing and pulse in that clip.', CH.clip.whyEmpty(res && res.checks, res && res.hint) + (S.recFps && S.recFps < 20 ? ' The recording was also choppy (about ' + Math.round(S.recFps) + ' pictures per second).' : ''), { speak: false }); return; }
+    if (sm.pulse < 40 || sm.pulse > 180) { say('That pulse reading does not look right (' + Math.round(sm.pulse) + ' bpm).', 'I will not use it. Try a steadier, brighter clip.', { speak: false }); return; }
     const first = !S.base;
     if (first) {
       const base = CH.makeBaseline(sm.series || []);
