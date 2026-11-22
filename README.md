@@ -32,7 +32,7 @@ To test the reader on its own: `node scripts/read-clip.cjs /path/to/clip.mp4` pr
 - Tested here: baseline and tension maths, the face-expression nudge, commands, the AI prompt builder (including what it is told so it does not repeat itself and does not talk about a body it cannot see), the Groq client, voice fallbacks and the live-camera logic against MOCKS (90 unit tests, including the clip reader and its process runner against a MOCK of the SDK); the clip mode screens in headless Chromium with a pretend reader and pretend camera; the full screen in headless Chromium with a fake AI bridge and fake microphone; the camera choice (DroidCam first) with pretend cameras; and Presage's REAL renderer SDK code, bundled, running in headless Chromium against a fake camera.
 - NOT tested here: the real Presage native backend with a real face, real Groq calls and real speech transcription, a real room's noise level with the silence detector, whether your camera accepts the brightness request, DroidCam itself, and spoken replies on every Linux setup.
 - Tested on the 2-core Celeron laptop (14 and 15 Nov 2026): Presage's file reader opened real 60 second mp4 clips from a phone camera, found the face and gave breathing and pulse readings, taking about 2 to 4 minutes and about 480 MB of memory. Two reads of the same clip agreed (14.3 and 13.7 breaths a minute, pulse 79 and 76), and inside the app, Clip mode read the clip and M² spoke the result (about 14 breaths a minute, pulse near 84). Agreement between reads shows the reading is repeatable. It does NOT show it is accurate, because I have not compared it with a medical device. Early clips failed for ordinary reasons: too much motion, too dark, upside down (a phone camera clip may need turning: `node scripts/read-clip.cjs clip.mp4 --rotate180`).
-- HRV needs about 60 seconds of settled signal. A 59 second clip never gives it, so use a still clip of 80 to 90 seconds. I have not yet confirmed an HRV value on a real clip.
+- HRV needs about 60 seconds of settled signal. A 59 second clip never gives it, so use a still clip of 80 to 90 seconds. On the 22 Nov 2026 test clip (see "Reference check" below) the app showed HRV 75 ms, labelled "settling", so it is not validated.
 - Known quirk: on the test laptop the Presage SDK could not open video files inside Electron's built-in runtime ("SmartSpectra input is unavailable"). The same files open fine with a normal Node install, so M² runs the clip reader with the system `node` (it must be on your PATH) when that happens. If the SDK still refuses a file, the reader makes a clean mp4 copy with ffmpeg and tries once more.
 - Live mode on a small computer (added in v0.10.0, NOT yet tested on the 2-core laptop): on computers with 2 or fewer cores or 4.5 GB or less of memory, Live mode asks the camera for 640x480 instead of 1280x720. A watchdog checks free memory every 2 seconds and stops the live reading, with a message, if less than 200 MB is free (change it with M2_LOW_MEM_MB in .env), so the computer does not freeze. Details has a "What should I close?" button that lists the biggest programs (Linux only). Before a live reading M² also checks that the chosen camera really shows a picture and moves to another camera if it shows black.
 - Recording with the laptop's own camera (Read me) is the part I have tested least. The most reliable path on a slow computer is: record a clip with a phone, then choose Use a clip.
@@ -46,6 +46,35 @@ M² uses the DroidCam phone camera by default, and opens another camera only if 
 2. Laptop: connect to the same Wi-Fi as the phone. Start the DroidCam client with that IP and port: `droidcam-cli 192.168.X.X 4747` (use your phone's numbers), or open the DroidCam desktop app. For USB instead: turn on USB debugging, run `adb forward tcp:4747 tcp:4747`, then `droidcam-cli adb 4747`.
 3. Start M². Tick the consent box. It should say "Phone camera found". Press Meet M².
 4. Put the phone on a stack of books or a stand, at eye level, 50 to 80 cm away, so your head, shoulders and chest are in the picture. Face a lamp or window, not the other way round.
+
+## Screenshots
+Consent and start:
+
+![Consent screen](docs/screenshots/01-consent.png)
+![M2 says hello](docs/screenshots/02-hello.png)
+
+Clip 1 (calm), read with the Presage SDK. This becomes the person's own calm baseline:
+
+![Clip 1 reading](docs/screenshots/03-clip1-calm-reading.png)
+
+Clip 2, after some movement. Tension 38 against that calm:
+
+![Clip 2 reading](docs/screenshots/04-clip2-reading-tension-38.png)
+
+Typed chat and a breathing guide:
+
+![Chat](docs/screenshots/05-chat-compare.png)
+![Breathe with me](docs/screenshots/06-breathe-with-me.png)
+
+## Reference check (one person, two clips)
+Two clips of one person were read in Clip mode on 22 Nov 2026, with a photo of a hospital monitor's pulse reading for each clip (cropped to the pulse only: `docs/screenshots/monitor-clip1-pulse-65.png` and `monitor-clip2-pulse-89.png`).
+
+| | M2 breathing | M2 pulse | Monitor pulse |
+|---|---|---|---|
+| Clip 1 (calm) | 23.5 per minute | 77 bpm | 65 bpm |
+| Clip 2 (after movement) | 25.3 per minute | 88 bpm | 89 bpm |
+
+M2 read 12 bpm higher than the monitor on clip 1 and 1 bpm lower on clip 2. The direction matched (higher on clip 2), but one pair of clips shows direction, not accuracy. There is no monitor reference for breathing rate or for the tension number. M2 does not measure oxygen, so the monitor's oxygen value is not used.
 
 ## Demo
 Video: https://youtu.be/CbMF3wlNCiU
