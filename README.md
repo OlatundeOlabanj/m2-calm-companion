@@ -77,7 +77,7 @@ Two clips of one person were read in Clip mode on 22 Nov 2026, with a photo of a
 M2 read 12 bpm higher than the monitor on clip 1 and 1 bpm lower on clip 2. The direction matched (higher on clip 2), but one pair of clips shows direction, not accuracy. There is no monitor reference for breathing rate or for the tension number. M2 does not measure oxygen, so the monitor's oxygen value is not used.
 
 ## Demo
-Video: https://youtu.be/CbMF3wlNCiU
+Video: https://youtu.be/YEVI6UXXihs
 
 The demo video shows Clip mode: a phone-recorded clip of a real person is read by Presage inside the app, then M² talks it through in a typed chat. The app says on screen that it is reading a recorded clip. It does not show Live mode, which needs a faster computer than the one I built this on.
 
